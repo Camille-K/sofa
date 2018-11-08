@@ -27,8 +27,6 @@
 #if defined(WIN32)
 #include <windows.h>
 #include <direct.h>
-#elif defined(_XBOX)
-#include <xtl.h>
 #else
 #include <unistd.h>
 #endif
@@ -83,10 +81,6 @@ FileRepository PluginRepository( "SOFA_PLUGIN_PATH", Utils::getSofaPathTo("lib")
 #endif
 
 FileRepository DataRepository("SOFA_DATA_PATH");
-
-#if defined (_XBOX) || defined(PS3)
-char* getenv(const char* varname) { return NULL; } // NOT IMPLEMENTED
-#endif
 
 FileRepository::FileRepository(const char* envVar, const char* relativePath)
 {
