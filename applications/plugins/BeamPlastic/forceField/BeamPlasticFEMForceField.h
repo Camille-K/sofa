@@ -46,6 +46,7 @@ using type::Vec;
 using type::Mat;
 using type::Vector3;
 using type::Quat;
+using type::vector;
 
 
 /** \class BeamPlasticFEMForceField
@@ -79,7 +80,7 @@ public:
 
     typedef unsigned int Index;
     typedef core::topology::BaseMeshTopology::Edge Element;
-    typedef type::vector<core::topology::BaseMeshTopology::Edge> VecElement;
+    typedef vector<core::topology::BaseMeshTopology::Edge> VecElement;
     typedef sofa::type::RGBAColor RGBAColor;
 
     typedef Vec<3, Real> Vec3;
@@ -381,10 +382,10 @@ protected:
     typedef Vec<27, VoigtTensor2> gaussPointStresses;
     /// Stress tensors fo each Gauss point in every beam element, computed at the previous time step.
     /// These stresses are required for the iterative radial return algorithm if plasticity is detected.
-    type::vector<gaussPointStresses> m_prevStresses;
+    vector<gaussPointStresses> m_prevStresses;
     /// Stress tensors corresponding to the elastic prediction step of the radial return algorithm.
     /// These are stored for the update of the tangent stiffness matrix
-    type::vector<gaussPointStresses> m_elasticPredictors;
+    vector<gaussPointStresses> m_elasticPredictors;
 
     /// Position at the last time step, to handle increments for the plasticity resolution
     VecCoord m_lastPos;
@@ -456,13 +457,13 @@ protected:
      * for the plasticity computation (shape function matrix, yield stress,
      * back stress, mechanical state, ...)
      */
-    type::vector<beamGaussPoints> m_gaussPoints;
+    vector<beamGaussPoints> m_gaussPoints;
     /**
      * Vector containing a set of 3 intervals (Interval3) for each beam element,
      * corresponding to the 3D integration intervals used in the Gaussian
      * quadrature method.
      */
-    type::vector<Interval3> m_integrationIntervals;
+    vector<Interval3> m_integrationIntervals;
 
     /// Initialises the integration intervals of a beam element, for the Gaussian quadrature method.
     void initialiseInterval(int beam, type::vector<Interval3>& integrationIntervals);
@@ -612,7 +613,7 @@ protected:
     BeamPlasticFEMForceField();
     BeamPlasticFEMForceField(Real poissonRatio, Real youngModulus, Real yieldStress, Real zSection, Real ySection, bool useVD,
                         bool isPlasticMuller, bool isTimoshenko, bool isPlasticKrabbenhoft, bool isPerfectlyPlastic,
-                        type::vector<Quat<SReal>> localOrientations);
+                        vector<Quat<SReal>> localOrientations);
     ~BeamPlasticFEMForceField() override;
 
 public:

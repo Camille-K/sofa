@@ -60,7 +60,7 @@ template<class DataTypes>
 BeamPlasticFEMForceField<DataTypes>::BeamPlasticFEMForceField(Real poissonRatio, Real youngModulus, Real yieldStress, Real zSection,
                                                     Real ySection, bool useVD, bool isPlasticMuller, bool isTimoshenko,
                                                     bool isPlasticKrabbenhoft, bool isPerfectlyPlastic,
-                                                    type::vector<Quat<SReal>> localOrientations)
+                                                    vector<Quat<SReal>> localOrientations)
     : m_beamsData(initData(&m_beamsData, "beamsData", "Internal element data"))
     , d_usePrecomputedStiffness(initData(&d_usePrecomputedStiffness, true, "usePrecomputedStiffness",
                                          "indicates if a precomputed elastic stiffness matrix is used, instead of being computed by reduced integration"))
@@ -193,7 +193,7 @@ void BeamPlasticFEMForceField<DataTypes>::reinit()
 template<class DataTypes>
 void BeamPlasticFEMForceField<DataTypes>::initBeams(size_t size)
 {
-    type::vector<BeamInfo>& bd = *(m_beamsData.beginEdit());
+    vector<BeamInfo>& bd = *(m_beamsData.beginEdit());
     bd.resize(size);
     m_beamsData.endEdit();
 }
@@ -226,7 +226,7 @@ void BeamPlasticFEMForceField<DataTypes>::reinitBeam(unsigned int i)
     else
         computeVDStiffness(i, a, b);
     // Initialisation of the tangent stiffness matrix
-    type::vector<BeamInfo>& bd = *(m_beamsData.beginEdit());
+    vector<BeamInfo>& bd = *(m_beamsData.beginEdit());
     Matrix12x12& Kt_loc = bd[i]._Kt_loc;
     Kt_loc.clear();
     m_beamsData.endEdit();
@@ -242,7 +242,7 @@ void BeamPlasticFEMForceField<DataTypes>::reinitBeam(unsigned int i)
 template<class DataTypes>
 void BeamPlasticFEMForceField<DataTypes>::setBeam(unsigned int i, double E, double yS, double L, double nu, double zSection, double ySection)
 {
-    type::vector<BeamInfo>& bd = *(m_beamsData.beginEdit());
+    vector<BeamInfo>& bd = *(m_beamsData.beginEdit());
     bd[i].init(E, yS, L, nu, zSection, ySection, d_isTimoshenko.getValue());
     m_beamsData.endEdit();
 }
@@ -691,7 +691,7 @@ void BeamPlasticFEMForceField<DataTypes>::computeStiffness(int i, Index, Index)
         phiz = (24.0 * (1.0 + _nu) * _Iy / (_A * L2));
     }
 
-    type::vector<BeamInfo>& bd = *(m_beamsData.beginEdit());
+    vector<BeamInfo>& bd = *(m_beamsData.beginEdit());
     Matrix12x12& k_loc = bd[i]._k_loc;
 
     // Define stiffness matrix 'k' in local coordinates
@@ -1067,7 +1067,7 @@ void BeamPlasticFEMForceField<DataTypes>::computeVDStiffness(int i, Index, Index
     const double nu = m_beamsData.getValue()[i]._nu;
 
     const Matrix6x6& C = m_beamsData.getValue()[i]._materialBehaviour;
-    type::vector<BeamInfo>& bd = *(m_beamsData.beginEdit());
+    vector<BeamInfo>& bd = *(m_beamsData.beginEdit());
     Matrix12x12& Ke_loc = bd[i]._Ke_loc;
     Ke_loc.clear();
 
@@ -1111,7 +1111,7 @@ void BeamPlasticFEMForceField<DataTypes>::computeMaterialBehaviour(int i, Index 
     Real E = m_beamsData.getValue()[i]._E; // Young's modulus
     Real nu = m_beamsData.getValue()[i]._nu; // Poisson ratio
 
-    type::vector<BeamInfo>& bd = *(m_beamsData.beginEdit());
+    vector<BeamInfo>& bd = *(m_beamsData.beginEdit());
 
     Matrix6x6& C = bd[i]._materialBehaviour;
     // Material behaviour matrix, here: Hooke's law
@@ -1676,7 +1676,7 @@ void BeamPlasticFEMForceField<DataTypes>::updateTangentStiffness(int i,
                                                             Index a,
                                                             Index b)
 {
-    type::vector<BeamInfo>& bd = *(m_beamsData.beginEdit());
+    vector<BeamInfo>& bd = *(m_beamsData.beginEdit());
     Matrix12x12& Kt_loc = bd[i]._Kt_loc;
     const Matrix6x6& C = bd[i]._materialBehaviour;
     const double E = bd[i]._E;
@@ -2164,7 +2164,7 @@ void BeamPlasticFEMForceField<DataTypes>::computeForceWithPerfectPlasticity(Matr
     VoigtTensor2 strainIncrement = VoigtTensor2();
     VoigtTensor2 newStressPoint = VoigtTensor2();
 
-    type::vector<BeamInfo>& bd = *(m_beamsData.beginEdit());
+    vector<BeamInfo>& bd = *(m_beamsData.beginEdit());
     Vec<27, MechanicalState>& pointMechanicalState = bd[index]._pointMechanicalState;
     bool isPlasticBeam = false;
     int gaussPointIt = 0;
@@ -2238,7 +2238,7 @@ void BeamPlasticFEMForceField<DataTypes>::computePerfectPlasticStressIncrement(i
         if (d_useConsistentTangentOperator.getValue())
             m_elasticPredictors[index][gaussPointIt] = trialStress;
 
-        type::vector<BeamInfo>& bd = *(m_beamsData.beginEdit());
+        vector<BeamInfo>& bd = *(m_beamsData.beginEdit());
 
         Vec<27, Real>& localYieldStresses = bd[index]._localYieldStresses;
         Real& yieldStress = localYieldStresses[gaussPointIt];
@@ -2287,7 +2287,7 @@ void BeamPlasticFEMForceField<DataTypes>::computePerfectPlasticStressIncrement(i
             double lambda = voigtDotProduct(yieldNormal, strainIncrement);
 
             VoigtTensor2 plasticStrainIncrement = lambda * yieldNormal;
-            type::vector<BeamInfo>& bd = *(m_beamsData.beginEdit());
+            vector<BeamInfo>& bd = *(m_beamsData.beginEdit());
             Vec<27, VoigtTensor2>& plasticStrainHistory = bd[index]._plasticStrainHistory;
             plasticStrainHistory[gaussPointIt] += plasticStrainIncrement;
             m_beamsData.endEdit();
@@ -2328,7 +2328,7 @@ void BeamPlasticFEMForceField<DataTypes>::computeForceWithHardening(Matrix12x1 &
     VoigtTensor2 strainIncrement = VoigtTensor2();
     VoigtTensor2 newStressPoint = VoigtTensor2();
 
-    type::vector<BeamInfo>& bd = *(m_beamsData.beginEdit());
+    vector<BeamInfo>& bd = *(m_beamsData.beginEdit());
     Vec<27, MechanicalState>& pointMechanicalState = bd[index]._pointMechanicalState;
     bool isPlasticBeam = false;
     int gaussPointIt = 0;
@@ -2403,7 +2403,7 @@ void BeamPlasticFEMForceField<DataTypes>::computeHardeningStressIncrement(int in
     if (d_useConsistentTangentOperator.getValue())
         m_elasticPredictors[index][gaussPointIt] = trialStress;
 
-    type::vector<BeamInfo>& bd = *(m_beamsData.beginEdit());
+    vector<BeamInfo>& bd = *(m_beamsData.beginEdit());
 
     Vec<27, VoigtTensor2> &backStresses = bd[index]._backStresses;
     VoigtTensor2 &backStress = backStresses[gaussPointIt];
@@ -2452,7 +2452,7 @@ void BeamPlasticFEMForceField<DataTypes>::computeHardeningStressIncrement(int in
 
         backStress += helper::rsqrt(2.0 / 3.0)*(1 - beta)*H*plasticMultiplier*finalN;
 
-        //type::vector<BeamInfo>& bd = *(m_beamsData.beginEdit()); //Done in the beginning to modify the yield and back stresses
+        //vector<BeamInfo>& bd = *(m_beamsData.beginEdit()); //Done in the beginning to modify the yield and back stresses
         Vec<27, VoigtTensor2> &plasticStrainHistory = bd[index]._plasticStrainHistory;
         VoigtTensor2 plasticStrainIncrement = helper::rsqrt(3.0/2.0)*plasticMultiplier*finalN;
         plasticStrainHistory[gaussPointIt] += plasticStrainIncrement;
@@ -2702,7 +2702,7 @@ void BeamPlasticFEMForceField<DataTypes>::integrateBeam(beamGaussPoints& gaussPo
 template<class DataTypes>
 Quat<SReal>& BeamPlasticFEMForceField<DataTypes>::beamQuat(int i)
 {
-    type::vector<BeamInfo>& bd = *(m_beamsData.beginEdit());
+    vector<BeamInfo>& bd = *(m_beamsData.beginEdit());
     return bd[i].quat;
 }
 
