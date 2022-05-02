@@ -164,13 +164,14 @@ void BeamPlasticFEMForceField<DataTypes>::init()
 template <class DataTypes>
 void BeamPlasticFEMForceField<DataTypes>::reinit()
 {
-    const size_t n = m_indexedElements->size();
+    const unsigned int nbBeams = m_indexedElements->size();
+    m_nbBeams = nbBeams;
 
     //Initialises the lastPos field with the rest position
     m_lastPos = this->mstate->read(core::ConstVecCoordId::restPosition())->getValue();
 
-    m_prevStresses.resize(n);
-    for (int i = 0; i < n; i++)
+    m_prevStresses.resize(nbBeams);
+    for (int i = 0; i < nbBeams; i++)
         for (int j = 0; j < 27; j++)
             m_prevStresses[i][j] = VoigtTensor2();
 
@@ -178,14 +179,14 @@ void BeamPlasticFEMForceField<DataTypes>::reinit()
     {
         // No need to store elastic predictors at each iteration if the consistent
         // tangent operator is not used.
-        m_elasticPredictors.resize(n);
-        for (int i = 0; i < n; i++)
+        m_elasticPredictors.resize(nbBeams);
+        for (int i = 0; i < nbBeams; i++)
             for (int j = 0; j < 27; j++)
                 m_elasticPredictors[i][j] = VoigtTensor2();
     }
 
-    initBeams( n );
-    for (unsigned int i=0; i<n; ++i)
+    initBeams(nbBeams);
+    for (unsigned int i=0; i<nbBeams; ++i)
         reinitBeam(i);
     msg_info() << "reinit OK, "<<n<<" elements." ;
 }

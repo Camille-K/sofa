@@ -450,6 +450,9 @@ protected:
 
     //---------- Gaussian integration ----------//
 
+    /// Number of beam elements defined in the ForceField
+    unsigned int m_nbBeams;
+
     /**
      * Vector containing a set of integration Gauss points for each beam element.
      * These Gauss points contain both the necessary coordinates and weights for
