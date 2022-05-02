@@ -156,8 +156,6 @@ void BeamPlasticFEMForceField<DataTypes>::init()
         msg_error() << "constitutive law model name " << constitutiveModel << " is not valid (should be RambergOsgood)";
     }
 
-    m_beamsData.createTopologyHandler(m_topology);
-
     reinit();
 }
 
@@ -188,7 +186,31 @@ void BeamPlasticFEMForceField<DataTypes>::reinit()
     initBeams(nbBeams);
     for (unsigned int i=0; i<nbBeams; ++i)
         reinitBeam(i);
-    msg_info() << "reinit OK, "<<n<<" elements." ;
+    msg_info() << "reinit OK, "<< nbBeams <<" elements." ;
+
+    //Initialisation of Gauss points, integration intervals, and local matrices
+//    m_localBeamMatrices.clear();
+//    m_localBeamMatrices.resize(numBeams);
+    m_gaussPoints.clear();
+    m_gaussPoints.resize(nbBeams);
+
+   const vector<BeamInfo> vecBeamInfo = m_beamsData.getValue();
+
+    m_integrationIntervals.clear(); // No need to resize as Intervals will be pushed_back
+    for (unsigned int beamId = 0; beamId < nbBeams; beamId++)
+    {
+//        BeamLocalMatrices* beamMatrices = &m_localBeamMatrices[b];
+
+        initialiseInterval(vecBeamInfo[beamId], m_integrationIntervals);
+        initialiseGaussPoints(vecBeamInfo[beamId], m_gaussPoints[beamId], m_integrationIntervals[beamId]);
+//        updateTangentStiffness(beamId, *beamMatrices); //Prior to plastic deformation, computes an elastic stiffness with Cep = C
+    }
+
+//    //Initialisaiton of beam mechanical states to ELASTIC
+//    m_beamMechanicalStates.clear();
+//    m_beamMechanicalStates.resize(nbBeams, MechanicalState::ELASTIC);
+
+    m_beamsData.createTopologyHandler(m_topology);
 }
 
 template<class DataTypes>
@@ -2470,45 +2492,51 @@ void BeamPlasticFEMForceField<DataTypes>::computeHardeningStressIncrement(int in
 //---------- Gaussian quadrature integration methods ----------//
 
 template< class DataTypes>
-void BeamPlasticFEMForceField<DataTypes>::initialiseInterval(int beam, type::vector<Interval3>& integrationIntervals)
+void BeamPlasticFEMForceField<DataTypes>::initialiseInterval(const BeamInfo& beamInfo,
+                                                             vector<Interval3>& integrationIntervals)
 {
-    if (d_sectionShape.getValue() == "rectangular")
-    {
-        Real L = m_beamsData.getValue()[beam]._L;
-        Real Ly = d_ySection.getValue();
-        Real Lz = d_zSection.getValue();
+    // For the moment, rectangular shape only
+    Real beamLength = beamInfo._L;
+    Real yDim = beamInfo._yDim;
+    Real zDim = beamInfo._zDim;
 
-        // Integration interval definition for a local frame at the centre of the beam
-        integrationIntervals.push_back(Interval3(-L / 2, L / 2, -Ly / 2, Ly / 2, -Lz / 2, Lz / 2));
-    }
-    else if (d_sectionShape.getValue() == "circular")
-    {
-        //TO DO: implement quadrature method for a disc and a hollow-disc cross section
-        msg_error() << "Quadrature method for " << d_sectionShape.getValue()
-            << " shape cross section has not been implemented yet. Methods for rectangular cross sections are available";
-    }
-    else
-    {
-        msg_error() << "Quadrature method for " << d_sectionShape.getValue()
-            << " shape cross section has not been implemented yet. Methods for rectangular cross sections are available";
-    }
+    // Integration interval definition for a local frame at the centre of the beam
+    integrationIntervals.push_back(BeamPlasticFEMForceField::Interval3(-beamLength / 2, beamLength / 2, -yDim / 2, yDim / 2, -zDim / 2, zDim / 2));
+
+//    if (d_sectionShape.getValue() == "rectangular")
+//    {
+//
+//    }
+//    else if (d_sectionShape.getValue() == "circular")
+//    {
+//        //TO DO: implement quadrature method for a disc and a hollow-disc cross section
+//        msg_error() << "Quadrature method for " << d_sectionShape.getValue()
+//            << " shape cross section has not been implemented yet. Methods for rectangular cross sections are available";
+//    }
+//    else
+//    {
+//        msg_error() << "Quadrature method for " << d_sectionShape.getValue()
+//            << " shape cross section has not been implemented yet. Methods for rectangular cross sections are available";
+//    }
 }
 
 template< class DataTypes>
-void BeamPlasticFEMForceField<DataTypes>::initialiseGaussPoints(int beam, type::vector<beamGaussPoints>& gaussPoints, const Interval3& integrationInterval)
+void BeamPlasticFEMForceField<DataTypes>::initialiseGaussPoints(const BeamInfo& beamInfo,
+                                                                beamGaussPoints& beamGaussPoints,
+                                                                const Interval3& integrationInterval)
 {
     //Gaussian nodes coordinates and weights for a 1D integration on [-1,1]
     const double sqrt3_5 = helper::rsqrt(3.0 / 5);
     Vec3 canonical3NodesCoordinates = { -sqrt3_5, 0, sqrt3_5 };
     Vec3 canonical3NodesWeights = { 5.0 / 9, 8.0 / 9, 5.0 / 9 };
 
-    Real L = m_beamsData.getValue()[beam]._L;
-    Real A = m_beamsData.getValue()[beam]._A;
-    Real Iy = m_beamsData.getValue()[beam]._Iy;
-    Real Iz = m_beamsData.getValue()[beam]._Iz;
+    Real length = beamInfo._L;
+    Real A = beamInfo._A;
+    Real Iy = beamInfo._Iy;
+    Real Iz = beamInfo._Iz;
 
-    Real nu = m_beamsData.getValue()[beam]._nu;
-    Real E = m_beamsData.getValue()[beam]._E;
+    Real nu = beamInfo._nu;
+    Real E = beamInfo._E;
 
     //Compute actual Gauss points coordinates and weights, with a 3D integration
     //NB: 3 loops because integration is in 3D, 3 iterations per loop because it's a 3 point integration
@@ -2544,10 +2572,10 @@ void BeamPlasticFEMForceField<DataTypes>::initialiseGaussPoints(int beam, type::
                 double w3Changed = changeWeight(w3, a3, b3);
 
                 GaussPoint3 newGaussPoint = GaussPoint3(xChanged, yChanged, zChanged, w1Changed, w2Changed, w3Changed);
-                newGaussPoint.setGradN(computeGradN(xChanged, yChanged, zChanged, L, A, Iy, Iz, E, nu));
-                newGaussPoint.setNx(computeNx(xChanged, yChanged, zChanged, L, A, Iy, Iz, E, nu));
+                newGaussPoint.setGradN(computeGradN(xChanged, yChanged, zChanged, length, A, Iy, Iz, E, nu));
+                newGaussPoint.setNx(computeNx(xChanged, yChanged, zChanged, length, A, Iy, Iz, E, nu));
                 newGaussPoint.setYieldStress(d_initialYieldStress.getValue());
-                gaussPoints[beam][gaussPointIt] = newGaussPoint;
+                beamGaussPoints[gaussPointIt] = newGaussPoint;
                 gaussPointIt++;
             }
         }

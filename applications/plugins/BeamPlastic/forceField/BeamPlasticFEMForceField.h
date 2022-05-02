@@ -331,7 +331,20 @@ protected:
         }
     };
 
-    EdgeData<  type::vector<BeamInfo> > m_beamsData;
+
+//    struct BeamGeometry
+//    {
+//        std::string sectionShape;   ///<cross-section shape (rectangular, elliptic, circular)
+//        double m_length;            ///<length of the beam
+//        double m_yDim;              ///<length of the beam section along Y (if rectangular)
+//        double m_zDim;              ///<length of the beam section along Z (if rectangular)
+//        double m_radius; 			///<radius of the section (if circular)
+//        double m_innerRadius;		///<inner radius of the section if beam is hollow
+//        double m_smallRadius;       ///<small radius of the section (if elliptic)
+//        double m_largeRadius;       ///<large radius of the section (if elliptic)
+//    };
+
+    EdgeData<  vector<BeamInfo> > m_beamsData;
 
     virtual void reset() override;
 
@@ -469,10 +482,11 @@ protected:
     vector<Interval3> m_integrationIntervals;
 
     /// Initialises the integration intervals of a beam element, for the Gaussian quadrature method.
-    void initialiseInterval(int beam, type::vector<Interval3>& integrationIntervals);
+    void initialiseInterval(const BeamInfo& beamInfo, vector<Interval3>& integrationIntervals);
 
     /// Initialises the Gauss points of a beam element, based on its geometrical info.
-    void initialiseGaussPoints(int beam, type::vector<beamGaussPoints>& gaussPoints, const Interval3& integrationInterval);
+    void initialiseGaussPoints(const BeamInfo& beamInfo, beamGaussPoints& gaussPoints,
+                               const Interval3& integrationInterval);
 
     /**
      * Computes the matrix form of the beam shape functions, used to interpolate
