@@ -67,6 +67,7 @@ public:
     /// perform one animation step
     void step(const sofa::core::ExecParams* params, SReal dt) override;
 
+    Data<bool> d_updateSceneAfterAnimateBeginEvent; ///<If true, calls propagateXAndV(pos, vel) at each time step, right after AnimateBeginEvent was handled.
 
     /// Construction method called by ObjectFactory.
     template<class T>

@@ -59,6 +59,7 @@ public:
     Data<bool> d_threadSafeVisitor; ///< If true, do not use realloc and free visitors in fwdInteractionForceField.
     Data<bool> d_parallelCollisionDetectionAndFreeMotion; ///<If true, executes free motion and collision detection in parallel
     Data<bool> d_parallelODESolving; ///<If true, executes all free motions in parallel
+    Data<bool> d_updateSceneAfterAnimateBeginEvent; ///<If true, calls propagateXAndV(pos, vel) at each time step, right after AnimateBeginEvent was handled.
 
 protected:
     FreeMotionAnimationLoop(simulation::Node* gnode);

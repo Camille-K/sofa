@@ -34,6 +34,10 @@
 #include <sofa/simulation/UpdateMappingEndEvent.h>
 #include <sofa/simulation/UpdateBoundingBoxVisitor.h>
 
+#include <sofa/simulation/VectorOperations.h>
+#include <sofa/simulation/MechanicalOperations.h>
+#include <sofa/core/behavior/MultiVec.h>
+
 #include <sofa/helper/ScopedAdvancedTimer.h>
 #include <sofa/helper/AdvancedTimer.h>
 
@@ -56,6 +60,7 @@ This loop do the following steps:
 
 DefaultAnimationLoop::DefaultAnimationLoop(simulation::Node* _gnode)
     : Inherit()
+    , d_updateSceneAfterAnimateBeginEvent(initData(&d_updateSceneAfterAnimateBeginEvent, false, "updateSceneAfterAnimateBeginEvent", "If true, updates the position and velocity of the MechanicalObjects after AnimateBeginEvent"))
     , gnode(_gnode)
 {
     //assert(gnode);
@@ -82,6 +87,11 @@ void DefaultAnimationLoop::step(const core::ExecParams* params, SReal dt)
     if (dt == 0)
         dt = this->gnode->getDt();
 
+    simulation::common::VectorOperations vop(params, getContext());
+    simulation::common::MechanicalOperations mop(params, getContext());
+    sofa::core::behavior::MultiVecCoord pos(&vop, core::VecCoordId::position() );
+    sofa::core::behavior::MultiVecDeriv vel(&vop, core::VecDerivId::velocity() );
+
 
 #ifdef SOFA_DUMP_VISITOR_INFO
     simulation::Visitor::printNode("Step");
@@ -92,6 +102,12 @@ void DefaultAnimationLoop::step(const core::ExecParams* params, SReal dt)
         PropagateEventVisitor act ( params, &ev );
         gnode->execute ( act );
     }
+
+    // After the end of AnimateBeginEvent, an update of the MechanicalObject's
+    // positions and velocities might be necessary. For instance in a simulation
+    // involving mappings, which parameters were changed during AnimateBeginEvent
+    if (d_updateSceneAfterAnimateBeginEvent.getValue())
+        mop.propagateXAndV(pos, vel);
 
     SReal startTime = gnode->getTime();
 
