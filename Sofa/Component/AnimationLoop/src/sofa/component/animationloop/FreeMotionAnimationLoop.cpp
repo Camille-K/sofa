@@ -73,6 +73,7 @@ FreeMotionAnimationLoop::FreeMotionAnimationLoop(simulation::Node* gnode)
     , d_threadSafeVisitor(initData(&d_threadSafeVisitor, false, "threadSafeVisitor", "If true, do not use realloc and free visitors in fwdInteractionForceField."))
     , d_parallelCollisionDetectionAndFreeMotion(initData(&d_parallelCollisionDetectionAndFreeMotion, false, "parallelCollisionDetectionAndFreeMotion", "If true, executes free motion step and collision detection step in parallel."))
     , d_parallelODESolving(initData(&d_parallelODESolving, false, "parallelODESolving", "If true, solves all the ODEs in parallel during the free motion step."))
+    , d_updateSceneAfterAnimateBeginEvent(initData(&d_updateSceneAfterAnimateBeginEvent, false, "updateSceneAfterAnimateBeginEvent", "If true, updates the position and velocity of the MechanicalObjects after AnimateBeginEvent"))
     , defaultSolver(nullptr)
     , l_constraintSolver(initLink("constraintSolver", "The ConstraintSolver used in this animation loop (required)"))
 {
@@ -205,6 +206,12 @@ void FreeMotionAnimationLoop::step(const sofa::core::ExecParams* params, SReal d
         PropagateEventVisitor act ( params, &ev );
         gnode->execute ( act );
     }
+
+    // After the end of AnimateBeginEvent, an update of the MechanicalObject's
+    // positions and velocities might be necessary. For instance in a simulation
+    // involving mappings, which parameters were changed during AnimateBeginEvent
+    if (d_updateSceneAfterAnimateBeginEvent.getValue())
+        mop.propagateXAndV(pos, vel);
 
     // Update the BehaviorModels
     // Required to allow the RayPickInteractor interaction
